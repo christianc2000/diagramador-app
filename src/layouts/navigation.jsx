@@ -3,10 +3,10 @@ import React from 'react';
 // Componente del encabezado con navbar
 const Navigation = () => {
     const headerStyle = {
-        backgroundColor: '#363030',
+        backgroundColor: '#333333',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
+       
         color: '#fff',
         height: '100%',
     };
@@ -23,7 +23,7 @@ const Navigation = () => {
 
     return (
         <div className="Navigation" style={headerStyle}>
-            <h1 style={{ marginRight: 'auto' }}>Encabezado</h1>
+            <img src="src/assets/Logo.png" alt="Logo"  style={{ maxHeight:"70%",padding:"50px"}} />
             <nav>
                 <ul style={navStyle}>
                     <li style={navItemStyle}>Inicio</li>
