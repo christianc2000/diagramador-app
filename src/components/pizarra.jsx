@@ -1,15 +1,28 @@
-import React, { useState } from 'react';
-import Button from '@mui/material/Button';
-import ButtonGroup from '@mui/material/ButtonGroup';
-import Box from '@mui/material/Box';
-import ReactFlow, { Background, BackgroundVariant, Controls, MiniMap } from 'reactflow';
+import React, { useState, useRef, useCallback } from 'react';
+import ReactFlow, {
+    ReactFlowProvider,
+    addEdge,
+    useNodesState,
+    useEdgesState,
+    Controls,
+    Background,
+    BackgroundVariant,
+    MiniMap
+} from 'reactflow';
 import 'reactflow/dist/style.css';
 import ResizableNodeSelected from './reacflow/resizable/ResizableNodeSelected';
 
+import Sidebar from './reacflow/sidebar/Sidebar';
+import ArrowEdge from './ArrowEdge';
+import BiDirectionalEdge from './reacflow/bidireccional/BiDirectionalEdge';
+import BiDirectionalNode from './reacflow/bidireccional/BiDirectionalNode';
+
+import '../components/index.css';
+
+const initialNodes = [];
 const nodeTypes = {
     ResizableNodeSelected,
 };
-
 const defaultNodeStyle = {
     background: '#fff',
     color: 'black',
@@ -17,94 +30,96 @@ const defaultNodeStyle = {
     width: '100px',
     height: '100px',
 };
+let id = 0;
+const getId = () => `dndnode_${id = id + 1}`;
 
-const initialNodes = [
-    {
-        id: '1',
-        type: 'ResizableNodeSelected',
-        data: { label: 'NodeResizer' },
-        position: { x: -100, y: 0 },
-        style: defaultNodeStyle,
-    },
-    {
-        id: '2',
-        type: 'ResizableNodeSelected',
-        data: { label: 'NodeResizer when selected' },
-        position: { x: 100, y: 300 },
-        style: defaultNodeStyle,
-    },
-    {
-        id: '3',
-        type: 'ResizableNodeSelected',
-        data: { label: 'Custom Resize Icon' },
-        position: { x: 150, y: 150 },
-        style: defaultNodeStyle,
-    },
-];
+const DnDFlow = () => {
+    const reactFlowWrapper = useRef(null);
+    const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+    const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+    const [reactFlowInstance, setReactFlowInstance] = useState(null);
+    const [sourceNode, setSourceNode] = useState(null);
+    const [targetNode, setTargetNode] = useState(null);
 
-const initialEdges = [];
-
-const verticalMenuStyle = {
-    width: '200px',
-    backgroundColor: '#444444',
-};
-
-const contentStyle = {
-    flex: '1',
-    backgroundColor: '#222222',
-};
-
-const containerStyle = {
-    display: 'flex',
-    color: '#fff',
-    height: '100%',
-};
-
-export default function NodeToolbarExample() {
-    const [nodes, setNodes] = useState(initialNodes);
-
-    const handleCreateNode = () => {
-        const newNode = {
-            id: '1',
-            type: 'ResizableNodeSelected',
-            data: { label: 'NodeResizer' },
-            position: { x: -100, y: 0 },
-            style: defaultNodeStyle,
-        };
-
-        setNodes((prevNodes) => [...prevNodes, newNode]);
+    const onConnect = (params) => {
+        const { source, target } = params;
+        setEdges((eds) => addEdge({ ...params, type: 'step' }, eds));
+        setSourceNode(source);
+        setTargetNode(target);
     };
 
+    const onDragOver = useCallback((event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+    }, []);
+
+    const onDrop = useCallback(
+        (event) => {
+            event.preventDefault();
+
+            const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
+            const type = event.dataTransfer.getData('application/reactflow');
+
+            // check if the dropped element is valid
+            if (typeof type === 'undefined' || !type) {
+                return;
+            }
+
+            const position = reactFlowInstance.project({
+                x: event.clientX - reactFlowBounds.left,
+                y: event.clientY - reactFlowBounds.top,
+            });
+            const newNodeId = getId();
+            const newNode = {
+                id: newNodeId,
+                type: 'ResizableNodeSelected',
+                position,
+                data: {
+                    label: `class name`,
+                    nodeId: newNodeId,
+                    width: defaultNodeStyle.width,
+                    height: defaultNodeStyle.height,
+                },
+                style: defaultNodeStyle,
+            };
+
+            setNodes((nds) => nds.concat(newNode));
+        },
+        [reactFlowInstance]
+    );
+
     return (
-        <div className="container" style={containerStyle}>
-            <div className="vertical-menu" style={verticalMenuStyle}>
-                <Box
-                    sx={{
-                        display: 'flex',
-                        '& > *': {
-                            m: 1,
-                        },
-                    }}
-                >
-                    <ButtonGroup orientation="vertical" aria-label="vertical outlined button group" fullWidth>
-                        <Button onClick={handleCreateNode}>Tabla</Button>
-                    </ButtonGroup>
-                </Box>
-            </div>
-            <div className="vertical-menu" style={contentStyle}>
-                <ReactFlow
-                    elements={nodes} // Utiliza la lista de nodos actualizada como elementos del ReactFlow
-                    className="react-flow-node-resizer-example"
-                    minZoom={0.2}
-                    maxZoom={4}
-                    fitView
-                    nodeTypes={nodeTypes}
-                >
-                    <Background variant={BackgroundVariant.Dots} />
-                    <MiniMap />
-                    <Controls />
-                </ReactFlow>
-            </div>
+        <div className="dndflow">
+            <Sidebar />
+            <ReactFlowProvider>
+                <div className="reactflow-wrapper" ref={reactFlowWrapper}>
+                    <ReactFlow
+                        nodes={nodes}
+                        edges={edges}
+                        onNodesChange={onNodesChange}
+                        onEdgesChange={onEdgesChange}
+                        onConnect={onConnect}
+                        onInit={setReactFlowInstance}
+                        onDrop={onDrop}
+                        onDragOver={onDragOver}
+                        nodeTypes={nodeTypes}
+                        edgeTypes={{
+                            step: (props) => (
+                                <ArrowEdge
+                                    {...props}
+                                    sourceNode={sourceNode}
+                                    targetNode={targetNode}
+                                />
+                            ),
+                        }}
+                        fitView
+                    >
+                        <Controls />
+                    </ReactFlow>
+                </div>
+            </ReactFlowProvider>
         </div>
     );
-}
+};
+
+export default DnDFlow;

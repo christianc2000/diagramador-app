@@ -1,23 +1,22 @@
 import React from 'react';
+import Button from '@mui/material/Button';
+import ButtonGroup from '@mui/material/ButtonGroup';
+import Box from '@mui/material/Box';
+
+
 
 export default () => {
-  const onDragStart = (event, nodeType) => {
-    event.dataTransfer.setData('application/reactflow', nodeType);
-    event.dataTransfer.effectAllowed = 'move';
-  };
+    const onDragStart = (event, nodeType) => {
+        event.dataTransfer.setData('application/reactflow', nodeType);
+        event.dataTransfer.effectAllowed = 'move';
+    };
 
-  return (
-    <aside>
-      <div className="description">You can drag these nodes to the pane on the right.</div>
-      <div className="dndnode input" onDragStart={(event) => onDragStart(event, 'input')} draggable>
-        Input Node
-      </div>
-      <div className="dndnode" onDragStart={(event) => onDragStart(event, 'default')} draggable>
-        Default Node
-      </div>
-      <div className="dndnode output" onDragStart={(event) => onDragStart(event, 'output')} draggable>
-        Output Node
-      </div>
-    </aside>
-  );
+    return (
+        <aside>
+             <div className="dndnode input" onDragStart={(event) => onDragStart(event, 'input')} draggable>
+                Tabla
+            </div>
+            
+        </aside>
+    );
 };
